@@ -1,5 +1,17 @@
 package com.example.multi_image_picker;
 
+import androidx.annotation.NonNull;
+
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.MethodChannel.Result;
+
+
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -35,13 +47,16 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-
+import android.content.Context;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
 
 /**
  * MultiImagePickerPlugin
  */
-public class MultiImagePickerPlugin implements  MethodCallHandler, PluginRegistry.ActivityResultListener {
+public class MultiImagePickerPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
     private static final String CHANNEL_NAME = "multi_image_picker";
+
     private static final String FETCH_MEDIA_THUMB_DATA = "fetchMediaThumbData";
     private static final String FETCH_MEDIA_INFO = "fetchMediaInfo";
     private static final String REQUEST_MEDIA_DATA = "requestMediaData";
@@ -72,23 +87,56 @@ public class MultiImagePickerPlugin implements  MethodCallHandler, PluginRegistr
     private static final String GETFAILD = "GET FAILED";
     private static final int REQUEST_CODE_CHOOSE = 1001;
     private static final int REQUEST_CODE_TAKE = 1002;
-    private final Activity activity;
-    private final Context context;
+    private  Activity activity;
     private static Result currentPickerResult;
 
-    public MultiImagePickerPlugin(Activity activity, Context context) {
-        this.activity = activity;
-        this.context = context;
-    }
+    private MethodChannel channel;
+    private Context context;
+
+//    public MultiImagePickerPlugin(Activity activity, Context context) {
+//        this.activity = activity;
+//        this.context = context;
+//    }
 
     /**
      * Plugin registration.
      */
-    public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
-        MultiImagePickerPlugin instance = new MultiImagePickerPlugin(registrar.activity(), registrar.context());
-        registrar.addActivityResultListener(instance);
-        channel.setMethodCallHandler(instance);
+//    public static void registerWith(Registrar registrar) {
+//        final MethodChannel channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
+//        MultiImagePickerPlugin instance = new MultiImagePickerPlugin(registrar.activity(), registrar.context());
+//        registrar.addActivityResultListener(instance);
+//        channel.setMethodCallHandler(instance);
+//    }
+
+    @Override
+    public void onAttachedToEngine(FlutterPluginBinding flutterPluginBinding) {
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), CHANNEL_NAME);
+        channel.setMethodCallHandler(this);
+        context = flutterPluginBinding.getApplicationContext();
+    }
+    @Override
+    public void onDetachedFromEngine(FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
+    }
+
+    @Override
+    public void onAttachedToActivity(@NonNull final ActivityPluginBinding binding) {
+        activity = binding.getActivity();
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+
     }
 
     boolean checkPermission(boolean checkCamera, boolean checkRecord, boolean checkStorage) {
@@ -413,66 +461,66 @@ public class MultiImagePickerPlugin implements  MethodCallHandler, PluginRegistr
         fishBun.startAlbum();
     }
 
-    @Override
-    public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-        try {
-            if (requestCode == REQUEST_CODE_CHOOSE) {
-                if (resultCode == Activity.RESULT_OK) {
-                    if (currentPickerResult != null) {
-                        Serializable result = data.getSerializableExtra(Define.INTENT_RESULT);
-                        currentPickerResult.success(result != null ? result : new HashMap());
-                        currentPickerResult = null;
-                    }
-                }else if (resultCode == Define.FINISH_DETAIL_RESULT_CODE) {
-                    if (currentPickerResult != null) {
-                        Serializable result = data.getSerializableExtra(Define.INTENT_RESULT);
-                        currentPickerResult.success(result);
-                        currentPickerResult = null;
-                    }
-                }else if (resultCode == Activity.RESULT_CANCELED) {
-                    if (currentPickerResult != null) {
-                        ArrayList result = data != null ? data.getParcelableArrayListExtra(Define.INTENT_RESULT) : new ArrayList();
-                        Boolean thumb = data != null ? data.getBooleanExtra(Define.INTENT_THUMB, true) : true;
-                        HashMap <String, Object> t = new HashMap<>();
-                        t.put("assets", result);
-                        t.put("thumb", thumb);
-                        currentPickerResult.error("CANCELLED", "", t);
-                        currentPickerResult = null;
-                    }
-                }else {
-                    if (currentPickerResult != null) {
-                        currentPickerResult.error("CANCELLED", "", new ArrayList<>());
-                        currentPickerResult = null;
-                    }
-                }
-                return true;
-            } else if (requestCode == REQUEST_CODE_TAKE) {
-                if (resultCode == Define.ENTER_TAKE_RESULT_CODE) {
-                    if (currentPickerResult != null) {
-                        HashMap result = (HashMap) data.getSerializableExtra(Define.INTENT_RESULT);
-                        currentPickerResult.success(result);
-                        currentPickerResult = null;
-                    }
-                }else {
-                    if (currentPickerResult != null) {
-                        currentPickerResult.error("CANCELLED", "", new HashMap<>());
-                        currentPickerResult = null;
-                    }
-                }
-                return true;
-            }else {
-                if (currentPickerResult != null) {
-                    currentPickerResult.success(new Object());
-                    currentPickerResult = null;
-                }
-                return true;
-            }
-        } catch (Exception e) {
-            if (currentPickerResult != null) {
-                currentPickerResult.error("CANCELLED", "", new ArrayList<>());
-                currentPickerResult = null;
-            }
-            return true;
-        }
-    }
+//    @Override
+//    public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+//        try {
+//            if (requestCode == REQUEST_CODE_CHOOSE) {
+//                if (resultCode == Activity.RESULT_OK) {
+//                    if (currentPickerResult != null) {
+//                        Serializable result = data.getSerializableExtra(Define.INTENT_RESULT);
+//                        currentPickerResult.success(result != null ? result : new HashMap());
+//                        currentPickerResult = null;
+//                    }
+//                }else if (resultCode == Define.FINISH_DETAIL_RESULT_CODE) {
+//                    if (currentPickerResult != null) {
+//                        Serializable result = data.getSerializableExtra(Define.INTENT_RESULT);
+//                        currentPickerResult.success(result);
+//                        currentPickerResult = null;
+//                    }
+//                }else if (resultCode == Activity.RESULT_CANCELED) {
+//                    if (currentPickerResult != null) {
+//                        ArrayList result = data != null ? data.getParcelableArrayListExtra(Define.INTENT_RESULT) : new ArrayList();
+//                        Boolean thumb = data != null ? data.getBooleanExtra(Define.INTENT_THUMB, true) : true;
+//                        HashMap <String, Object> t = new HashMap<>();
+//                        t.put("assets", result);
+//                        t.put("thumb", thumb);
+//                        currentPickerResult.error("CANCELLED", "", t);
+//                        currentPickerResult = null;
+//                    }
+//                }else {
+//                    if (currentPickerResult != null) {
+//                        currentPickerResult.error("CANCELLED", "", new ArrayList<>());
+//                        currentPickerResult = null;
+//                    }
+//                }
+//                return true;
+//            } else if (requestCode == REQUEST_CODE_TAKE) {
+//                if (resultCode == Define.ENTER_TAKE_RESULT_CODE) {
+//                    if (currentPickerResult != null) {
+//                        HashMap result = (HashMap) data.getSerializableExtra(Define.INTENT_RESULT);
+//                        currentPickerResult.success(result);
+//                        currentPickerResult = null;
+//                    }
+//                }else {
+//                    if (currentPickerResult != null) {
+//                        currentPickerResult.error("CANCELLED", "", new HashMap<>());
+//                        currentPickerResult = null;
+//                    }
+//                }
+//                return true;
+//            }else {
+//                if (currentPickerResult != null) {
+//                    currentPickerResult.success(new Object());
+//                    currentPickerResult = null;
+//                }
+//                return true;
+//            }
+//        } catch (Exception e) {
+//            if (currentPickerResult != null) {
+//                currentPickerResult.error("CANCELLED", "", new ArrayList<>());
+//                currentPickerResult = null;
+//            }
+//            return true;
+//        }
+//    }
 }

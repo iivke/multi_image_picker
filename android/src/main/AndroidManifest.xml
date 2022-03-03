@@ -26,6 +26,7 @@
             android:name="com.sangcomz.fishbun.ui.camera.CameraActivity"
             android:screenOrientation="portrait" />
 
+        <meta-data android:name="flutterEmbedding" android:value="2" />
     </application>
 
 </manifest>
